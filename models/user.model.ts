@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema({
   },
 
   profileImage: String,
+  
+  isActive: { type: Boolean, default: true },
 
   pets: [
     {

@@ -1,4 +1,5 @@
 import express from "express";
+import {protect} from '../../middlewares/auth.middleware.js'
 import {
   getWishlist,
   addToWishlist,
@@ -7,6 +8,7 @@ import {
 } from "../../controllers/user/wishlist.controller.js";
 
 const router = express.Router();
+router.use(protect);
 
 // Get wishlist
 router.get("/", getWishlist);
@@ -15,7 +17,7 @@ router.get("/", getWishlist);
 router.post("/", addToWishlist);
 
 // Remove a single wishlist item
-router.delete("/:itemId", removeWishlistItem);
+router.delete("/:productId", removeWishlistItem);
 
 // Clear entire wishlist
 router.delete("/", clearWishlist);

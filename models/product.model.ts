@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema({
   regularPrice: { type: Number, required: true },
   discount: { type: Number, default: 0 },
   salePrice: Number,
-  category: { type: mongoose.Schema.Types.ObjectId, ref: 'category', required: true },
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
   stock: { type: Number, required: true },
   soldCount: { type: Number, default: 0 },
   isPromoted: { type: Boolean, default: false }

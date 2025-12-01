@@ -9,6 +9,7 @@ export interface IUserBase {
     phone?: string;
     role: 'user' | 'admin';
     profileImage?: string;
+    isActive: boolean;
     
     // Note: It's good practice to define specific types for nested arrays later!
     pets: any[]; 

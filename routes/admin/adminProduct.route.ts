@@ -1,5 +1,6 @@
 import express from "express";
 import {protect, admin} from '../../middlewares/auth.middleware.js'
+import {uploadProductImage} from '../../middlewares/uploadProductImage.middleware.js';
 import {
   getAdminProducts,
   getAdminProductById,
@@ -19,10 +20,10 @@ router.get("/", getAdminProducts);
 router.get("/:id", getAdminProductById);
 
 // Create new product
-router.post("/", createAdminProduct);
+router.post("/", uploadProductImage, createAdminProduct);
 
 // Update product
-router.put("/:id", updateAdminProduct);
+router.put("/:id", uploadProductImage, updateAdminProduct);
 
 // Delete product
 router.delete("/:id", deleteAdminProduct);

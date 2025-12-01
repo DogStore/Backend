@@ -1,5 +1,6 @@
 import express from "express";
 import {protect, admin} from '../../middlewares/auth.middleware.js'
+import { uploadCategoryImage } from '../../middlewares/uploadCategoryImage.middleware.js';
 import {
   getAdminCategories,
   getAdminCategoryById,
@@ -18,10 +19,10 @@ router.get("/", getAdminCategories);
 router.get("/:id", getAdminCategoryById);
 
 // Create new category
-router.post("/", createAdminCategory);
+router.post("/", uploadCategoryImage, createAdminCategory);
 
 // Update category
-router.put("/:id", updateAdminCategory);
+router.put("/:id", uploadCategoryImage, updateAdminCategory);
 
 // Delete category
 router.delete("/:id", deleteAdminCategory);
