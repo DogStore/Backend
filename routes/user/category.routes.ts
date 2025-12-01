@@ -1,7 +1,7 @@
 import express from "express";
 import {
   getCategories,
-  getCategoryById,
+  getCategoryBySlug
 } from "../../controllers/user/category.controller.js";
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const router = express.Router();
 // Get all categories
 router.get("/", getCategories);
 
-// Get category by ID
-router.get("/:id", getCategoryById);
+// Get category by slug
+router.get('/:slug', getCategoryBySlug);
 
 export default router;

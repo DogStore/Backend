@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import User from '../models/user.model.js'; // Adjust path if needed
+import User from '../models/user.model.js'; 
 
 // Define a custom interface to extend the Express Request object
 // This allows TypeScript to know that 'req.user' exists
@@ -44,10 +44,8 @@ export const protect = async (req: CustomRequest, res: Response, next: NextFunct
 
 // Ensure this uses the CustomRequest interface defined above
 export const admin = (req: CustomRequest, res: Response, next: NextFunction) => {
-    // 1. Check if the user exists (should exist if protect ran successfully)
-    // 2. Check if the user's role is 'admin'
     if (req.user && req.user.role === 'admin') {
-        next(); // User is an admin, proceed
+        next(); 
     } else {
         res.status(403).json({ message: 'Not authorized as an admin' });
     }

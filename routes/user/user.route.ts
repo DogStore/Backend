@@ -1,4 +1,5 @@
 import express from "express";
+import {protect} from '../../middlewares/auth.middleware.js'  
 import {
   getUserProfile,
   updateUserProfile,
@@ -7,9 +8,10 @@ import {
   addUserAddress,
   updateUserAddress,
   deleteUserAddress
-} from "../../controllers/user/user.controller";
+} from "../../controllers/user/user.controller.js";
 
 const router = express.Router();
+router.use(protect);
 
 // Get logged-in user profile
 router.get("/profile", getUserProfile);

@@ -1,12 +1,18 @@
 import express from "express";
+import {protect} from '../../middlewares/auth.middleware.js'
 import {
   getOrders,
   getOrderById,
   createOrder,
-  updateOrder
+  updateOrder,
+  validateCoupon
 } from "../../controllers/user/order.controller.js";
 
 const router = express.Router();
+router.use(protect);
+
+// routes/user/order.routes.ts
+router.post('/validate-coupon', validateCoupon);
 
 // Get all orders for logged-in user
 router.get("/", getOrders);

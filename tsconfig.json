@@ -25,5 +25,5 @@
         "sourceMap": true, 
         "noImplicitAny": true, 
     }, 
-    "include": ["src/**/*", "src/index.ts"],
+    "include": ["src/**/*", "src/index.ts", "src/fixedUser.ts"],
 }

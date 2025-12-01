@@ -6,8 +6,10 @@ import {
   removeCartItem,
   clearCart
 } from "../../controllers/user/cart.controller.js";
+import { protect } from '../../middlewares/auth.middleware.js';
 
 const router = express.Router();
+router.use(protect)
 
 // Get user cart
 router.get("/", getCart);
