@@ -31,15 +31,15 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",          // ← change from "nodenext" to "commonjs"
-    "moduleResolution": "node",   // ← change from "nodenext" to "node"
+    "module": "commonjs",
+    "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "strict": true,
+    "noImplicitAny": true,
     "sourceMap": true,
-    "noImplicitAny": true
+    "baseUrl": "."      // ← helps with absolute imports
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "models/**/*", "controllers/**/*", "routes/**/*", "configs/**/*", "middlewares/**/*", "utils/**/*"]
 }
