@@ -16,17 +16,22 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "dist",
-    "sourceMap": true,
-    "strict": false
+    "rootDir": "./",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": [
+    "src/**/*",
+    "configs/**/*",
     "controllers/**/*",
-    "routes/**/*",
+    "interfaces/**/*",
     "middlewares/**/*",
     "models/**/*",
+    "routes/**/*",
     "services/**/*",
-    "utils/**/*",
-    "src/**/*"
-  ]
+    "utils/**/*"
+  ],
+  "exclude": ["node_modules", "dist"]
 }
 
