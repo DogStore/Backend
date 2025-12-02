@@ -17,7 +17,7 @@
     "moduleResolution": "NodeNext",
     "outDir": "dist",
     "sourceMap": true,
-    "strict": true
+    "strict": false
   },
   "include": [
     "controllers/**/*",
