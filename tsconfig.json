@@ -16,14 +16,30 @@
 //   }
 // }
 
-{ 
-    "compilerOptions": { 
-        "module": "nodenext", 
-        "moduleResolution": "nodenext", 
-        "baseUrl": "src", 
-        "outDir": "dist", 
-        "sourceMap": true, 
-        "noImplicitAny": true, 
-    }, 
-    "include": ["src/**/*", "src/index.ts", "src/fixedUser.ts"],
+// { 
+//     "compilerOptions": { 
+//         "module": "nodenext", 
+//         "moduleResolution": "nodenext", 
+//         "baseUrl": "src", 
+//         "outDir": "dist", 
+//         "sourceMap": true, 
+//         "noImplicitAny": true, 
+//     }, 
+//     "include": ["src/**/*", "src/index.ts", "src/fixedUser.ts"],
+// }
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",          // ← change from "nodenext" to "commonjs"
+    "moduleResolution": "node",   // ← change from "nodenext" to "node"
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "noImplicitAny": true
+  },
+  "include": ["src/**/*"]
 }
