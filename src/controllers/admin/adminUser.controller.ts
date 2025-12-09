@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import User from '../../models/user.model'
-import generateToken from "../../utils/generateToken";
+import User from '../../models/user.model.js'
+import generateToken from "../../utils/generateToken.js";
 
 export const createAdminUser = async (req: Request, res: Response) => {
   try {

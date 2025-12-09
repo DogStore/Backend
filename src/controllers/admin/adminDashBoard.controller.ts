@@ -3,8 +3,6 @@ import { Request, Response } from 'express';
 import Order from '../../models/order.model.js';
 import User from '../../models/user.model.js';
 import Product from '../../models/product.model.js';
-import Category from '../../models/category.model.js';
-import mongoose from 'mongoose';
 
 // GET /api/admin/dashboard/stats
 export const getDashboardStats = async (req: Request, res: Response) => {

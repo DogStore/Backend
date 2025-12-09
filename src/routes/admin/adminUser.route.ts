@@ -1,7 +1,7 @@
 // src/routes/admin/user.routes.ts
 import { Router } from 'express';
-import { protect, admin } from '../../middlewares/auth.middleware'
-import {createAdminUser, updateAdminUser} from '../../controllers/admin/adminUser.controller'
+import { protect, admin } from '../../middlewares/auth.middleware.js'
+import {createAdminUser, updateAdminUser} from '../../controllers/admin/adminUser.controller.js'
 
 const router = Router();
 

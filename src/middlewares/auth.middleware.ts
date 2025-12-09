@@ -1,8 +1,8 @@
 // middleware/auth.ts (or wherever your protect middleware lives)
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-import { IUser } from '../interfaces/user.interface';
-import User from '../models/user.model'
+import { IUser } from '../interfaces/user.interface.js';
+import User from '../models/user.model.js'
 
 // Custom request with typed user
 interface CustomRequest extends Request {
