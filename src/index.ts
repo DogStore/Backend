@@ -13,7 +13,7 @@ import wishListRoutes from './routes/user/wishlist.route.js'
 import couponRoutes from './routes/admin/adminCoupon.route.js';
 import userRoutes from './routes/user/user.route.js'
 import adminDashboardRoutes from './routes/admin/adminDashboard.route.js';
-
+import AdminUserRoutes from './routes/admin/adminUser.route.js'
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,6 +34,7 @@ app.use('/api/admin/products', adminProductRoutes);
 app.use('/api/admin/orders', adminOrderRoutes); // Test later
 app.use('/api/admin/coupons', couponRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/adminUser', AdminUserRoutes);
 
 
 // Public (User) routes

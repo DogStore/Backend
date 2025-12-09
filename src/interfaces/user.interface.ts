@@ -14,7 +14,7 @@ export interface IUserBase {
     // Note: It's good practice to define specific types for nested arrays later!
     pets: any[]; 
     addresses: any[]; 
-    tokens: any[]; 
+    Token: string; 
 }
 
 // Define the interface for the full Mongoose document, which includes the methods

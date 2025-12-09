@@ -54,13 +54,10 @@ const userSchema = new mongoose.Schema({
   ],
 
   // You might store tokens if you use refresh tokens or logout feature
-  tokens: [
-    {
-      token: {
-        type: String,
-      },
-    },
-  ],
+  Token: {
+    type: String,
+    default: null
+  }
 });
 
 

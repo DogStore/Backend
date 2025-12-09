@@ -1,4 +1,4 @@
-// middlewares/upload.middleware.ts
+// middlewares/Categories.middleware.ts
 import multer from 'multer';
 
 // Use memory storage (file in RAM, not disk) — perfect for Cloudinary

@@ -1,8 +1,11 @@
-// middlewares/upload.middleware.ts
+// middlewares/uploadProductImages.middleware.ts
 import multer from 'multer';
 
-// Use memory storage (file in RAM, not disk) — perfect for Cloudinary
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-export const uploadProductImage = upload.array('images', 10);  
+// Accept multiple product images + one flag
+export const uploadProductImage = upload.fields([
+  { name: 'images', maxCount: 10 },     // product photos
+  { name: 'countryFlag', maxCount: 1 } // flag image
+]);

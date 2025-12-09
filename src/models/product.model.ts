@@ -14,11 +14,8 @@ const productSchema = new mongoose.Schema({
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
   stock: { type: Number, required: true },
   soldCount: { type: Number, default: 0 },
-  isPromoted: { type: Boolean, default: false }
+  isPromoted: { type: Boolean, default: false },
+  countryFlag: {type: String, default: null}
 }, { timestamps: true });
-
-// productSchema.index({ soldCount: -1 });
-// productSchema.index({ category: 1 });
-// productSchema.index({ isPromoted: 1 });
 
 export default mongoose.model('Product', productSchema);

@@ -8,7 +8,7 @@ interface AuthRequest extends Request {
   user?: any;
 }
 
-// REGISTER
+// REGISTER (corrected)
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -18,42 +18,59 @@ export const registerUser = async (req: Request, res: Response) => {
       return res.status(409).json({ message: 'User already exists' });
     }
 
-    const user = await User.create({
+    const user = new User({
       name,
       email,
       password,
       phone,
-      role: email === 'admin@doghub.com' ? 'admin' : 'user' // auto admin if you want
+      role: email === 'admin@doghub.com' ? 'admin' : 'user'
     });
 
-    if (user) {
-      res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id.toString())
-      });
-    }
+    // Save first to get real _id
+    await user.save();
+
+    // Now generate token with real ID
+    const token = generateToken(user._id.toString());
+
+    user.Token = token; 
+    await user.save(); 
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error during registration' });
   }
 };
 
-// LOGIN
+// controllers/auth.controller.ts
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
+
+    if (user && !user.isActive) {
+      return res.status(401).json({ message: 'Account is deactivated' });
+    }
+    
     if (user && (await user.matchPassword(password))) {
+      const token = generateToken(user._id.toString());
+
+      user.Token = token;
+      await user.save(); 
+
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id.toString())
+        token
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -64,10 +81,18 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
-// LOGOUT (client removes token, we just respond)
+// LOGOUT
 export const logoutUser = async (req: AuthRequest, res: Response) => {
+  const token = req.headers.authorization?.split(' ')[1];
+
+  if (token && req.user) {
+    // ✅ Clear all Token (since only one exists, this removes it)
+    req.user.tokens = null;;
+    await req.user.save();
+  }
+
   res.json({ message: 'Logged out successfully' });
-  // Token is removed on frontend (localStorage.removeItem('token'))
+  // Frontend should also remove token from localStorage
 };
 
 // GET CURRENT USER (/me)
@@ -84,13 +109,24 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 
 // REFRESH TOKEN (simple version — just regenerate)
 export const refreshToken = async (req: Request, res: Response) => {
-  const { token } = req.body; // old token
+  const { token } = req.body;
 
   if (!token) return res.status(401).json({ message: 'No token provided' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    
+    // Optional: verify old token is still valid in DB
+    const user = await User.findById(decoded.id);
+    if (!user || user.Token !== token) {
+      return res.status(401).json({ message: 'Old token revoked' });
+    }
+
     const newToken = generateToken(decoded.id);
+    
+    // ✅ Save new token to DB (optional but recommended)
+    user.Token = newToken;
+    await user.save();
 
     res.json({ token: newToken });
   } catch (error) {

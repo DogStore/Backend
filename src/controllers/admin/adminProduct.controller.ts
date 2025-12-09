@@ -78,6 +78,26 @@ export const createAdminProduct = async (req: Request, res: Response) => {
       ? regularPriceNum - (regularPriceNum * discountNum / 100)
       : regularPriceNum;
 
+
+    // Handle countryFlag upload
+    let countryFlagUrl: string | null = null;
+    if (req.files && req.files['countryFlag']) {
+      const flagFile = req.files['countryFlag'][0];
+      const result = await new Promise<string>((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'doghub/flags' },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary flag upload error:', error);
+              reject(new Error('Flag upload failed'));
+            } else {
+              resolve(result.secure_url);
+            }
+          }
+        ).end(flagFile.buffer);
+      });
+      countryFlagUrl = result;
+    }
     // Handle image uploads
     let imageUrls: string[] = [];
     if (req.files && Array.isArray(req.files)) {
@@ -114,6 +134,7 @@ export const createAdminProduct = async (req: Request, res: Response) => {
       size: size?.trim(),
       isPromoted: isPromoted === 'true' || isPromoted === true,
       images: imageUrls,
+      countryFlag: countryFlagUrl
     });
 
     await product.save();
@@ -129,6 +150,7 @@ export const createAdminProduct = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // PUT /admin/products/:id
 export const updateAdminProduct = async (req: Request, res: Response) => {
@@ -165,10 +187,11 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       ? regularPriceNum - (regularPriceNum * discountNum / 100)
       : regularPriceNum;
 
-    // Handle new image uploads
-    let newImageUrls: string[] = [];
-    if (req.files && Array.isArray(req.files)) {
-      // Delete old images from Cloudinary
+    // ✅ Handle product images
+    let newImageUrls = product.images; // default: keep existing
+    const images = (req.files as any)?.['images'];
+    if (images && Array.isArray(images) && images.length > 0) {
+      // Delete old images
       if (product.images.length > 0) {
         await Promise.all(
           product.images.map(async (url) => {
@@ -182,26 +205,53 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
 
       // Upload new images
       newImageUrls = await Promise.all(
-        (req.files as Express.Multer.File[]).map(async (file) => {
-          const result = await new Promise<string>((resolve, reject) => {
+        images.map(async (file: Express.Multer.File) => {
+          return new Promise<string>((resolve, reject) => {
             cloudinary.uploader.upload_stream(
               { folder: 'doghub/products' },
               (error, result) => {
                 if (error) {
-                  console.error('Cloudinary upload error:', error);
+                  console.error('Cloudinary image upload error:', error);
                   reject(new Error('Image upload failed'));
                 } else {
-                  resolve(result.secure_url);
+                  resolve(result!.secure_url);
                 }
               }
             ).end(file.buffer);
           });
-          return result;
         })
       );
     }
 
-    // Update fields
+    // ✅ Handle countryFlag
+    let newCountryFlag = product.countryFlag; // default: keep existing
+    const countryFlagFile = (req.files as any)?.['countryFlag']?.[0];
+    if (countryFlagFile) {
+      // Delete old flag if exists
+      if (product.countryFlag) {
+        const publicId = getPublicIdFromUrl(product.countryFlag);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+
+      // Upload new flag
+      newCountryFlag = await new Promise<string>((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'doghub/flags' },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary flag upload error:', error);
+              reject(new Error('Flag upload failed'));
+            } else {
+              resolve(result!.secure_url);
+            }
+          }
+        ).end(countryFlagFile.buffer);
+      });
+    }
+
+    // Update product
     product.set({
       name: name?.trim() || product.name,
       slug,
@@ -215,7 +265,8 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       isPromoted: isPromoted !== undefined 
         ? (isPromoted === 'true' || isPromoted === true) 
         : product.isPromoted,
-      images: newImageUrls.length > 0 ? newImageUrls : product.images, // Keep old if no new uploaded
+      images: newImageUrls,
+      countryFlag: newCountryFlag, // ✅ Save updated flag
     });
 
     await product.save();
@@ -250,6 +301,14 @@ export const deleteAdminProduct = async (req: Request, res: Response) => {
           }
         })
       );
+    }
+
+    // Delete countryFlag from Cloudinary
+    if (product.countryFlag) {
+      const publicId = getPublicIdFromUrl(product.countryFlag);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
     }
 
     await Product.findByIdAndDelete(req.params.id);

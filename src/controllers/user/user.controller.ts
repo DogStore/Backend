@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 import User from '../../models/user.model.js';
 
 // GET /api/user/profile — Get user profile
@@ -29,7 +28,7 @@ export const updateUserProfile = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-
+    
     // Update fields
     if (name) user.name = name.trim();
     if (email) user.email = email.trim().toLowerCase();
