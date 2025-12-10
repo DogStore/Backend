@@ -14,9 +14,17 @@ import couponRoutes from './routes/admin/adminCoupon.route.js';
 import userRoutes from './routes/user/user.route.js'
 import adminDashboardRoutes from './routes/admin/adminDashboard.route.js';
 import AdminUserRoutes from './routes/admin/adminUser.route.js'
+import cors from 'cors'
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+  ],
+  credentials: true
+}));
 
 // Accept JSON input
 // Middleware
