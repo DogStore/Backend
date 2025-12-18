@@ -188,74 +188,79 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       ? regularPriceNum - (regularPriceNum * discountNum / 100)
       : regularPriceNum;
 
-    // ✅ Handle product images
-    let newImageUrls = product.images;
-    const files = req.files as any;
-    if (files) {
-      const images = files['images'];
-      if (images && Array.isArray(images) && images.length > 0) {
-        // Delete old images
-        if (product.images.length > 0) {
-          await Promise.all(
-            product.images.map(async (url) => {
-              const publicId = getPublicIdFromUrl(url);
-              if (publicId) {
-                await cloudinary.uploader.destroy(publicId);
-              }
-            })
-          );
-        }
+    // ✅ Handle image updates: partial delete + add
+    let updatedImageUrls = [...product.images]; // Start with existing images
 
-        // Upload new images
-        newImageUrls = await Promise.all(
-          images.map(async (file: Express.Multer.File) => {
-            return new Promise<string>((resolve, reject) => {
-              cloudinary.uploader.upload_stream(
-                { folder: 'doghub/products' },
-                (error, result) => {
-                  if (error) {
-                    console.error('Cloudinary image upload error:', error);
-                    reject(new Error('Image upload failed'));
-                  } else {
-                    resolve(result!.secure_url);
-                  }
-                }
-              ).end(file.buffer);
-            });
-          })
-        );
-      }
-    }
+    // 1. Remove images marked for deletion
+    const imagesToDelete = req.body.imagesToDelete || [];
+    if (Array.isArray(imagesToDelete)) {
+      updatedImageUrls = updatedImageUrls.filter(url => !imagesToDelete.includes(url));
 
-    // ✅ Handle countryFlag
-    let newCountryFlag = product.countryFlag;
-    if (files) {
-      const countryFlagFile = files['countryFlag']?.[0];
-      if (countryFlagFile) {
-        // Delete old flag
-        if (product.countryFlag) {
-          const publicId = getPublicIdFromUrl(product.countryFlag);
+      // Also delete them from Cloudinary
+      await Promise.all(
+        imagesToDelete.map(async (url: string) => {
+          const publicId = getPublicIdFromUrl(url);
           if (publicId) {
             await cloudinary.uploader.destroy(publicId);
           }
-        }
-
-        // Upload new flag
-        newCountryFlag = await new Promise<string>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            { folder: 'doghub/flags' },
-            (error, result) => {
-              if (error) {
-                console.error('Cloudinary flag upload error:', error);
-                reject(new Error('Flag upload failed'));
-              } else {
-                resolve(result!.secure_url);
-              }
-            }
-          ).end(countryFlagFile.buffer);
-        });
-      }
+        })
+      );
     }
+
+    // 2. Upload new images
+    let newImageUrls: string[] = [];
+    const images = (req.files as any)?.['images'];
+    if (images && Array.isArray(images) && images.length > 0) {
+      newImageUrls = await Promise.all(
+        images.map(async (file: Express.Multer.File) => {
+          return new Promise<string>((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+              { folder: 'doghub/products' },
+              (error, result) => {
+                if (error) {
+                  console.error('Cloudinary image upload error:', error);
+                  reject(new Error('Image upload failed'));
+                } else {
+                  resolve(result!.secure_url);
+                }
+              }
+            ).end(file.buffer);
+          });
+        })
+      );
+    }
+
+    // 3. Combine: kept images + new images
+    const finalImageUrls = [...updatedImageUrls, ...newImageUrls];
+
+    // ✅ Handle countryFlag
+    let newCountryFlag = product.countryFlag;
+    const countryFlagFile = (req.files as any)?.['countryFlag']?.[0];
+    if (countryFlagFile) {
+      // Delete old flag if exists
+      if (product.countryFlag) {
+        const publicId = getPublicIdFromUrl(product.countryFlag);
+        if (publicId) {
+          await cloudinary.uploader.destroy(publicId);
+        }
+      }
+
+      // Upload new flag
+      newCountryFlag = await new Promise<string>((resolve, reject) => {
+        cloudinary.uploader.upload_stream(
+          { folder: 'doghub/flags' },
+          (error, result) => {
+            if (error) {
+              console.error('Cloudinary flag upload error:', error);
+              reject(new Error('Flag upload failed'));
+            } else {
+              resolve(result!.secure_url);
+            }
+          }
+        ).end(countryFlagFile.buffer);
+      });
+    }
+
     // Update product
     product.set({
       name: name?.trim() || product.name,
@@ -270,11 +275,11 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       isPromoted: isPromoted !== undefined 
         ? (isPromoted === 'true' || isPromoted === true) 
         : product.isPromoted,
-      images: newImageUrls,
+      images: finalImageUrls,
       isActive: isActive !== undefined
-        ? (isActive === true || isActive === true )
+        ? (isActive === 'true' || isActive === true)
         : product.isActive,
-      countryFlag: newCountryFlag, // ✅ Save updated flag
+      countryFlag: newCountryFlag
     });
 
     await product.save();
