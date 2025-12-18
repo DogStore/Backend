@@ -15,6 +15,7 @@ const productSchema = new mongoose.Schema({
   stock: { type: Number, required: true },
   soldCount: { type: Number, default: 0 },
   isPromoted: { type: Boolean, default: false },
+  isActive: {type: Boolean, default:true},
   countryFlag: {type: String, default: null}
 }, { timestamps: true });
 

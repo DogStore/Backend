@@ -51,7 +51,7 @@ export const getAdminProductById = async (req: Request, res: Response) => {
 // POST /admin/products
 export const createAdminProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, regularPrice, discount, category, stock, size, isPromoted } = req.body;
+    const { name, description, regularPrice, discount, category, stock, size, isPromoted, isActive } = req.body;
 
     // Basic validation
     if (!name || !regularPrice || !category || !stock) {
@@ -133,6 +133,7 @@ export const createAdminProduct = async (req: Request, res: Response) => {
       stock: parseInt(stock, 10),
       size: size?.trim(),
       isPromoted: isPromoted === 'true' || isPromoted === true,
+      isActive: isActive === 'true' || isActive === true, 
       images: imageUrls,
       countryFlag: countryFlagUrl
     });
@@ -160,7 +161,7 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    const { name, description, regularPrice, discount, category, stock, size, isPromoted } = req.body;
+    const { name, description, regularPrice, discount, category, stock, size, isPromoted, isActive } = req.body;
 
     // Validate category if provided
     if (category) {
@@ -270,6 +271,9 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
         ? (isPromoted === 'true' || isPromoted === true) 
         : product.isPromoted,
       images: newImageUrls,
+      isActive: isActive !== undefined
+        ? (isActive === true || isActive === true )
+        : product.isActive,
       countryFlag: newCountryFlag, // ✅ Save updated flag
     });
 
