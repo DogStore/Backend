@@ -1,5 +1,7 @@
 import express from "express";
 import {protect} from '../../middlewares/auth.middleware.js'  
+import { uploadUserImage } from '../../middlewares/uploadUserImage.middleware.js';
+import { updateUserImage } from '../../controllers/user/user.controller.js';
 import {
   getUserProfile,
   updateUserProfile,
@@ -21,6 +23,8 @@ router.put("/profile", updateUserProfile);
 
 // Delete user account
 router.delete("/profile", deleteUserAccount);
+
+router.put('/profile/image', protect, uploadUserImage, updateUserImage);
 
 // ----- Address Management ----- //
 router.get("/addresses", getUserAddresses);

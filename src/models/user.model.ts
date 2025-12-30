@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     // minlength: 6,
   },
-
+  userImage: { type: String, default: null },
   phone: String,
 
   role: {

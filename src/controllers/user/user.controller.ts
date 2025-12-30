@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import User from '../../models/user.model.js';
+import cloudinary from '../../configs/cloudinary.config.js';
 
 // GET /api/user/profile — Get user profile
 export const getUserProfile = async (req: Request, res: Response) => {
@@ -70,13 +71,72 @@ export const deleteUserAccount = async (req: Request, res: Response) => {
       message: 'Account deactivated successfully'
     });
 
-    // 💀 Hard delete (uncomment if needed):
-    // await User.findByIdAndDelete(userId);
-    // return res.status(200).json({ success: true, message: 'Account deleted permanently' });
-
   } catch (error: any) {
     console.error('Error deleting account:', error);
     return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+export const updateUserImage = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user._id;
+
+    // req.file is now available thanks to middleware
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'Image file required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Delete old image if exists
+    if (user.userImage) {
+      const publicId = getPublicIdFromUrl(user.userImage);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
+    // Upload new image
+    const result = await new Promise<any>((resolve, reject) => {
+      cloudinary.uploader.upload_stream(
+        { folder: 'doghub/users' },
+        (error, result) => {
+          if (error) {
+            reject(new Error('Image upload failed'));
+          } else {
+            resolve(result);
+          }
+        }
+      ).end(req.file.buffer);
+    });
+
+    // Save new image URL
+    user.userImage = result.secure_url;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile image updated successfully',
+      userImage: user.userImage
+    });
+  } catch (error: any) {
+    console.error('Update user image error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Helper: Extract Public ID from URL
+const getPublicIdFromUrl = (url: string): string | null => {
+  try {
+    const parts = url.split('/');
+    const filename = parts[parts.length - 1];
+    const publicId = filename.split('.')[0]; // Remove extension
+    return publicId;
+  } catch {
+    return null;
   }
 };
 
@@ -220,3 +280,4 @@ export const deleteUserAddress = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+

@@ -113,3 +113,123 @@ export const getProductsByCategory = async (req: Request, res: Response) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// POST /api/products/:id/reviews – Add Review
+// controllers/user/product.controller.ts 
+export const addProductReview = async (req: Request, res: Response) => {
+  try {
+    const { rating, comment } = req.body;
+    const productId = req.params.id;
+    const userId = (req as any).user._id; // From auth middleware
+
+    if (!rating || !comment) {
+      return res.status(400).json({ success: false, message: 'Rating and comment required' });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    // Check if user already reviewed (optional)
+    const existingReview = product.reviews.find(r => r.user.toString() === userId);
+    if (existingReview) {
+      return res.status(400).json({ success: false, message: 'You already reviewed this product' });
+    }
+
+    // Add review
+    product.reviews.push({
+      user: userId,
+      rating: Number(rating),
+      comment: comment.trim(),
+      createdAt: new Date()
+    });
+
+    // Recalculate
+    const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
+    product.avgRating = totalRating / product.reviews.length;
+    product.reviewCount = product.reviews.length;
+
+    await product.save();
+
+    // Populate user name for response
+    await product.populate('reviews.user', 'name');
+
+    res.status(201).json({
+      success: true,
+      message: 'Review added successfully',
+      review: product.reviews[product.reviews.length - 1]
+    });
+  } catch (error: any) {
+    console.error('Add review error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/products/:id/reviews – Get All Reviews
+
+export const getProductReviews = async (req: Request, res: Response) => {
+  try {
+    const productId = req.params.id;
+    const product = await Product.findById(productId).populate('reviews.user', 'name');
+    
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    res.json({
+      success: true,
+      reviews: product.reviews
+    });
+  } catch (error: any) {
+    console.error('Get reviews error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//  DELETE /api/products/:id/reviews/:reviewId – Delete Review (User or Admin)
+
+export const deleteProductReview = async (req: Request, res: Response) => {
+  try {
+    const { id: productId, reviewId } = req.params;
+    const userId = (req as any).user._id;
+    const userRole = (req as any).user.role;
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    const reviewIndex = product.reviews.findIndex(r => r._id?.toString() === reviewId);
+    if (reviewIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    // Only allow: review owner OR admin
+    const review = product.reviews[reviewIndex];
+    if (review.user.toString() !== userId && userRole !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    // Remove review
+    product.reviews.splice(reviewIndex, 1);
+
+    // Recalculate
+    if (product.reviews.length > 0) {
+      const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
+      product.avgRating = totalRating / product.reviews.length;
+      product.reviewCount = product.reviews.length;
+    } else {
+      product.avgRating = 0;
+      product.reviewCount = 0;
+    }
+
+    await product.save();
+
+    res.json({ success: true, message: 'Review deleted' });
+  } catch (error: any) {
+    console.error('Delete review error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

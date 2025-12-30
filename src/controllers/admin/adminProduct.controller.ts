@@ -51,7 +51,7 @@ export const getAdminProductById = async (req: Request, res: Response) => {
 // POST /admin/products
 export const createAdminProduct = async (req: Request, res: Response) => {
   try {
-    const { name, description, regularPrice, discount, category, stock, size, isPromoted, isActive } = req.body;
+    const { name, description, regularPrice, discount, category, stock, size, isPromoted, isActive, countryName } = req.body;
 
     // Basic validation
     if (!name || !regularPrice || !category || !stock) {
@@ -135,7 +135,8 @@ export const createAdminProduct = async (req: Request, res: Response) => {
       isPromoted: isPromoted === 'true' || isPromoted === true,
       isActive: isActive === 'true' || isActive === true, 
       images: imageUrls,
-      countryFlag: countryFlagUrl
+      countryFlag: countryFlagUrl,
+      countryName: countryName?.trim() || ''
     });
 
     await product.save();
@@ -261,6 +262,9 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       });
     }
 
+    const countryName = req.body.countryName !== undefined 
+      ? req.body.countryName.trim() 
+      : product.countryName;
     // Update product
     product.set({
       name: name?.trim() || product.name,
@@ -279,7 +283,8 @@ export const updateAdminProduct = async (req: Request, res: Response) => {
       isActive: isActive !== undefined
         ? (isActive === 'true' || isActive === true)
         : product.isActive,
-      countryFlag: newCountryFlag
+      countryFlag: newCountryFlag,
+      countryName: countryName
     });
 
     await product.save();

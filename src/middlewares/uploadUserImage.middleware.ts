@@ -1,7 +1,6 @@
-// middlewares/Categories.middleware.ts
 import multer from 'multer';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-export const uploadCategoryImage = upload.single('image');  
+export const uploadUserImage = upload.single('userImage');

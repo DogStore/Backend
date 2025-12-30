@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Order from '../../models/order.model.js';
 import Cart from '../../models/cart.model.js'
 import Coupon from '../../models/coupon.model.js';
+import Product from '../../models/product.model.js';
 
 // Helper: Generate unique order number
 const generateOrderNumber = () => {
@@ -65,24 +66,53 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Cart is empty' });
     }
 
+    // Filter valid items (DO NOT reassign cart.items)
+    const validItems = cart.items.filter(item => item.product != null);
+    if (validItems.length === 0) {
+      return res.status(400).json({ success: false, message: 'Cart contains no valid products' });
+    }
+
+    // CHECK STOCK VALIDATION
+    for (const item of validItems) {
+      const productId = typeof item.product === 'string' 
+        ? item.product 
+        : (item.product as any)._id;
+
+      const product = await Product.findById(productId);
+      if (!product) {
+        throw new Error('Product not found');
+      }
+
+      const quantity = item.quantity || 1;
+      if (product.stock < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for "${product.name}". Available: ${product.stock}, Requested: ${quantity}`
+        });
+      }
+    }
+
     // Build order items & calculate total
     let totalAmount = 0;
-    const orderItems = cart.items.map(item => {
-      // Use item's stored price (snapshot), fallback to product if needed
+    const orderItems = validItems.map(item => {
+      const productId = typeof item.product === 'string' 
+        ? item.product 
+        : (item.product as any)._id;
+
       const price = item.price || 
-                   (item.product as any)?.salePrice || 
-                   (item.product as any)?.regularPrice ||
-                   0;
-      const quantity = item.quantity || 1;
-      totalAmount += price * quantity;
+                  (item.product as any)?.salePrice || 
+                  (item.product as any)?.regularPrice ||
+                  0;
+
+      totalAmount += price * (item.quantity || 1);
 
       return {
-        product: (item.product as any)?._id || item.product,
-        name: item.name || (item.product as any)?.name,
-        slug: item.slug || (item.product as any)?.slug,
-        image: item.image || (item.product as any)?.images?.[0],
+        product: productId,
+        name: item.name || (item.product as any)?.name || '',
+        slug: item.slug || (item.product as any)?.slug || '',
+        image: item.image || (item.product as any)?.images?.[0] || '',
         price,
-        quantity
+        quantity: item.quantity || 1
       };
     });
 
@@ -140,6 +170,15 @@ export const createOrder = async (req: Request, res: Response) => {
 
     await order.save();
 
+    // Update each product
+    for (const item of orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { 
+          stock: -item.quantity,     // Decrease stock
+          soldCount: item.quantity   // 👈 Increase soldCount
+        }
+      });
+    }
     // Clear user's cart
     await Cart.findOneAndDelete({ user: userId });
 

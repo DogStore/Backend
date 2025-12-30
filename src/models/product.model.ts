@@ -16,7 +16,38 @@ const productSchema = new mongoose.Schema({
   soldCount: { type: Number, default: 0 },
   isPromoted: { type: Boolean, default: false },
   isActive: {type: Boolean, default:true},
-  countryFlag: {type: String, default: null}
+  countryFlag: {type: String, default: null},
+  countryName: {type: String, default: ''},
+  reviews: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true
+    },
+    comment: {
+      type: String,
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+
+  avgRating: {
+    type: Number,
+    default: 0
+  },
+  reviewCount: {
+    type: Number,
+    default: 0
+  }
 }, { timestamps: true });
 
 export default mongoose.model('Product', productSchema);
