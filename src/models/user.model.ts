@@ -18,7 +18,6 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: true,
-    // minlength: 6,
   },
   userImage: { type: String, default: null },
   phone: String,

@@ -39,7 +39,7 @@ app.use("/api/auth", authRoute)
 // Admin Routhes
 app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/products', adminProductRoutes);
-app.use('/api/admin/orders', adminOrderRoutes); // Test later
+app.use('/api/admin/orders', adminOrderRoutes); 
 app.use('/api/admin/coupons', couponRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/admin/adminUser', AdminUserRoutes);

@@ -25,7 +25,10 @@ export const getSingleProduct = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
 
-    const product = await Product.findOne({ slug }).populate('category');
+    const product = await Product.findOne({ slug })
+      .populate('category')
+      .populate('reviews.user', 'name');
+
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -132,34 +135,48 @@ export const addProductReview = async (req: Request, res: Response) => {
     }
 
     // Check if user already reviewed
-    const existingReview = product.reviews.find(r => r.user.toString() === userId);
+    const existingReview = product.reviews.find(
+      r => r.user.toString() === userId.toString()
+    );
+
     if (existingReview) {
-      return res.status(400).json({ success: false, message: 'You already reviewed this product' });
+      existingReview.rating = Number(rating);
+      existingReview.comment = comment.trim();
+      existingReview.createdAt = new Date();
+    } else {
+      product.reviews.push({
+        user: userId,
+        rating: Number(rating),
+        comment: comment.trim(),
+        createdAt: new Date()
+      });
     }
 
-    // Add review
-    product.reviews.push({
-      user: userId,
-      rating: Number(rating),
-      comment: comment.trim(),
-      createdAt: new Date()
-    });
-
-    // Recalculate
+    // Recalculate ratings
     const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
     product.avgRating = totalRating / product.reviews.length;
     product.reviewCount = product.reviews.length;
 
     await product.save();
 
-    // Populate user name for response
+    // Populate user name
     await product.populate('reviews.user', 'name');
+
+    // Get the LAST inserted review
+    const addedReview = product.reviews[product.reviews.length - 1];
 
     res.status(201).json({
       success: true,
       message: 'Review added successfully',
-      review: product.reviews[product.reviews.length - 1]
+      review: {
+        _id: addedReview._id,
+        rating: addedReview.rating,
+        comment: addedReview.comment,
+        createdAt: addedReview.createdAt,
+        user: (addedReview.user as any).name
+      }
     });
+
   } catch (error: any) {
     console.error('Add review error:', error);
     res.status(500).json({ success: false, message: error.message });
