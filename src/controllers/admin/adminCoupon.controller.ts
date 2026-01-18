@@ -159,7 +159,7 @@ export const updateAdminCoupon = async (req: Request, res: Response) => {
   }
 };
 
-// DELETE /api/admin/coupons/:id (Soft Delete Recommended)
+// DELETE /api/admin/coupons/:id
 export const deleteAdminCoupon = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -177,10 +177,6 @@ export const deleteAdminCoupon = async (req: Request, res: Response) => {
       success: true,
       message: 'Coupon deactivated successfully'
     });
-
-    // 💀 Hard delete (uncomment if needed):
-    // await Coupon.findByIdAndDelete(id);
-    // return res.status(200).json({ success: true, message: 'Coupon deleted successfully' });
 
   } catch (error: any) {
     console.error('Error deleting coupon:', error);

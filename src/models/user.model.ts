@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema({
 
   addresses: [
     {
-      title: String, // e.g., "Home", "Office"
+      title: String,
       street: String,
       city: String,
       country: String,
@@ -53,7 +53,6 @@ const userSchema = new mongoose.Schema({
     },
   ],
 
-  // You might store tokens if you use refresh tokens or logout feature
   Token: {
     type: String,
     default: null
@@ -63,7 +62,6 @@ const userSchema = new mongoose.Schema({
 
 userSchema.pre('save', async function (next) {
 
-  // check whether the password has been modified yet
   if(!this.isModified('password')){
     return next()
   }
@@ -74,12 +72,11 @@ userSchema.pre('save', async function (next) {
     next();
   }catch(error){
     console.error("Error hashing password:", error);
-    next(new Error("Password hashing failed.")); // Pass error to Mongoose   
+    next(new Error("Password hashing failed.")); 
   }
 })
 
 userSchema.methods.matchPassword = async function (enteredPassword: string): Promise<boolean> {
-    // 'this.password' refers to the HASHED password in the database
     return await bcrypt.compare(enteredPassword, this.password);
 };
 

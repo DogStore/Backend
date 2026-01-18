@@ -19,7 +19,6 @@ export interface IUser extends IUserBase, Document {
     matchPassword(enteredPassword: string): Promise<boolean>; 
 }
 
-// extend the user interface for request object
 export interface CustomerRequest extends Request {
     user?: IUser;
 }

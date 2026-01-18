@@ -23,7 +23,7 @@ router.get("/:id", getOrderById);
 // Create new order
 router.post("/", createOrder);
 
-// Update order (optional, e.g., cancel)
+// Update order
 router.put("/:id", updateOrder);
 
 export default router;

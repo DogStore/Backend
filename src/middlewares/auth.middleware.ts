@@ -6,7 +6,7 @@ import User from '../models/user.model.js'
 
 // Custom request with typed user
 interface CustomRequest extends Request {
-  user?: IUser; // Now strongly typed!
+  user?: IUser;
 }
 
 export const protect = async (req: CustomRequest, res: Response, next: NextFunction) => {
@@ -30,7 +30,7 @@ export const protect = async (req: CustomRequest, res: Response, next: NextFunct
         return res.status(401).json({ message: 'Account is deactivated' });
       }
 
-      // 🔒 CRITICAL: Check if this token is stored in the user's tokens array
+      //Check if this token is stored in the user's tokens array
       if (user.Token !== token) {
         return res.status(401).json({ message: 'Token revoked or invalid' });
       }

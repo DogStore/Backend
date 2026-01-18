@@ -6,7 +6,7 @@ export const getAdminOrders = async (req: Request, res: Response) => {
   try {
     const orders = await Order.find()
       .populate('user', 'name email')
-      .populate('items.product', 'name slug images') // 👈 'images' (plural) to match your Product model
+      .populate('items.product', 'name slug images') 
       .sort({ createdAt: -1 });
 
     return res.status(200).json({

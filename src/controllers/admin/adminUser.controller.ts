@@ -6,33 +6,27 @@ export const createAdminUser = async (req: Request, res: Response) => {
   try {
     const { name, email, password, phone } = req.body;
 
-    // Validate input
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'User with this email already exists' });
     }
 
-    // Create new admin user
     const user = new User({
       name,
       email,
-      password, // will be hashed by pre-save hook
+      password, 
       phone,
-      role: 'admin', // 👈 set role to admin
+      role: 'admin', 
     });
 
-    // Save to get _id
     await user.save();
 
-    // Generate token for new admin (optional: send to frontend)
     const token = generateToken(user._id.toString());
 
-    // Optional: assign token to DB (if using single-token model)
     user.Token = token;
     await user.save();
 
@@ -41,7 +35,7 @@ export const createAdminUser = async (req: Request, res: Response) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      token, // optional: if you want to auto-login new admin
+      token, 
     });
 
   } catch (error) {
@@ -55,7 +49,6 @@ export const updateAdminUser = async (req: any, res: any) => {
     const { id } = req.params;
     const { name, email, phone, role, isActive } = req.body;
 
-    // 👉 Prevent self-update of role (optional safety)
     if (id === req.user._id.toString() && role && role !== 'admin') {
       return res.status(400).json({ message: 'You cannot demote yourself' });
     }
@@ -69,7 +62,6 @@ export const updateAdminUser = async (req: any, res: any) => {
     // Update fields if provided
     if (name !== undefined) user.name = name.trim();
     if (email !== undefined) {
-      // Check if new email is already used by someone else
       const emailExists = await User.findOne({ email, _id: { $ne: id } });
       if (emailExists) {
         return res.status(409).json({ message: 'Email already in use' });
@@ -78,7 +70,6 @@ export const updateAdminUser = async (req: any, res: any) => {
     }
     if (phone !== undefined) user.phone = phone.trim();
 
-    // Update role only if provided and valid
     if (role !== undefined) {
       if (!['admin', 'user'].includes(role)) {
         return res.status(400).json({ message: 'Invalid role. Must be "admin" or "user".' });

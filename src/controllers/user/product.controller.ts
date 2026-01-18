@@ -6,7 +6,7 @@ import Category from "../../models/category.model.js";
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const products = await Product.find()
-      .populate('category', 'name slug') // Only populate name & slug of category
+      .populate('category', 'name slug')
       .sort({ createdAt: -1 });
 
     return res.status(200).json({
@@ -40,13 +40,13 @@ export const getSingleProduct = async (req: Request, res: Response) => {
 // GET /api/products/search/query — Search products
 export const searchProducts = async (req: Request, res: Response) => {
   try {
-    const { q } = req.query; // e.g., ?q=headphones
+    const { q } = req.query;
 
     if (!q || typeof q !== 'string') {
       return res.status(400).json({ success: false, message: 'Search query required' });
     }
 
-    const regex = new RegExp(q.trim(), 'i'); // case-insensitive
+    const regex = new RegExp(q.trim(), 'i');
 
     const products = await Product.find({
       $or: [
@@ -120,7 +120,7 @@ export const addProductReview = async (req: Request, res: Response) => {
   try {
     const { rating, comment } = req.body;
     const productId = req.params.id;
-    const userId = (req as any).user._id; // From auth middleware
+    const userId = (req as any).user._id;
 
     if (!rating || !comment) {
       return res.status(400).json({ success: false, message: 'Rating and comment required' });
@@ -131,7 +131,7 @@ export const addProductReview = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Check if user already reviewed (optional)
+    // Check if user already reviewed
     const existingReview = product.reviews.find(r => r.user.toString() === userId);
     if (existingReview) {
       return res.status(400).json({ success: false, message: 'You already reviewed this product' });
@@ -205,16 +205,13 @@ export const deleteProductReview = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
-    // Only allow: review owner OR admin
     const review = product.reviews[reviewIndex];
     if (review.user.toString() !== userId && userRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
-    // Remove review
     product.reviews.splice(reviewIndex, 1);
 
-    // Recalculate
     if (product.reviews.length > 0) {
       const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
       product.avgRating = totalRating / product.reviews.length;

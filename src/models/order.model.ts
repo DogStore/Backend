@@ -25,7 +25,7 @@ const orderSchema = new mongoose.Schema({
   phone: String,
   status: {
     type: String,
-    enum: ['pending','paid','processing','shipped','delivered','canceled'],
+    enum: ['pending','paid', 'canceled'],
     default: 'pending'
   },
   appliedCoupon: {

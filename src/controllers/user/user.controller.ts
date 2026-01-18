@@ -30,7 +30,6 @@ export const updateUserProfile = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     
-    // Update fields
     if (name) user.name = name.trim();
     if (email) user.email = email.trim().toLowerCase();
     if (phone) user.phone = phone.trim();
@@ -62,7 +61,6 @@ export const deleteUserAccount = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // 🔒 Soft delete: mark as inactive (better than hard delete)
     user.isActive = false;
     await user.save();
 
@@ -81,7 +79,6 @@ export const updateUserImage = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user._id;
 
-    // req.file is now available thanks to middleware
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Image file required' });
     }
@@ -91,7 +88,6 @@ export const updateUserImage = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Delete old image if exists
     if (user.userImage) {
       const publicId = getPublicIdFromUrl(user.userImage);
       if (publicId) {
@@ -133,7 +129,7 @@ const getPublicIdFromUrl = (url: string): string | null => {
   try {
     const parts = url.split('/');
     const filename = parts[parts.length - 1];
-    const publicId = filename.split('.')[0]; // Remove extension
+    const publicId = filename.split('.')[0]; 
     return publicId;
   } catch {
     return null;
@@ -170,7 +166,6 @@ export const addUserAddress = async (req: Request, res: Response) => {
     const userId = (req as any).user._id;
     const { title, street, city, country, postalCode, isDefault } = req.body;
 
-    // ... validation ...
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -218,12 +213,10 @@ export const updateUserAddress = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Address not found' });
     }
 
-    // Set only one default address
     if (isDefault) {
       user.addresses = user.addresses.map(addr => ({ ...addr, isDefault: false }));
     }
 
-    // Update address
     user.addresses[addressIndex] = {
       ...user.addresses[addressIndex],
       title: title?.trim() || user.addresses[addressIndex].title,

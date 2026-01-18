@@ -55,18 +55,15 @@ export const createOrder = async (req: Request, res: Response) => {
     const userId = (req as any).user._id;
     const { shippingAddress, phone, appliedCoupon } = req.body;
 
-    // Validate required fields
     if (!shippingAddress || !phone) {
       return res.status(400).json({ success: false, message: 'Shipping address and phone are required' });
     }
 
-    // Find user's cart
     const cart = await Cart.findOne({ user: userId }).populate('items.product');
     if (!cart || cart.items.length === 0) {
       return res.status(400).json({ success: false, message: 'Cart is empty' });
     }
 
-    // Filter valid items (DO NOT reassign cart.items)
     const validItems = cart.items.filter(item => item.product != null);
     if (validItems.length === 0) {
       return res.status(400).json({ success: false, message: 'Cart contains no valid products' });
@@ -92,7 +89,6 @@ export const createOrder = async (req: Request, res: Response) => {
       }
     }
 
-    // Build order items & calculate total
     let totalAmount = 0;
     const orderItems = validItems.map(item => {
       const productId = typeof item.product === 'string' 
@@ -116,12 +112,10 @@ export const createOrder = async (req: Request, res: Response) => {
       };
     });
 
-    // Apply coupon discount (optional)
   let finalTotal = totalAmount;
   let couponData = null;
 
   if (appliedCoupon?.code) {
-    // 🔍 Find the ACTUAL coupon in DB
     const coupon = await Coupon.findOne({
       code: appliedCoupon.code.trim().toUpperCase(),
       isActive: true,
@@ -129,31 +123,57 @@ export const createOrder = async (req: Request, res: Response) => {
     });
 
     if (coupon) {
-      // ✅ Calculate discount SERVER-SIDE (never trust frontend!)
-      let discount = 0;
-      if (coupon.type === 'percent') {
-        discount = totalAmount * (coupon.value / 100);
-      } else { // fixed
-        discount = coupon.value;
-      }
 
-      // 🛡️ Apply min order amount check
-      if (coupon.minOrderAmount && totalAmount < coupon.minOrderAmount) {
-        return res.status(400).json({ 
-          success: false, 
-          message: `Minimum order amount $${coupon.minOrderAmount} required for this coupon` 
+      // CHECK TOTAL LIMIT
+      if (coupon.usageLimitTotal && coupon.usedCount >= coupon.usageLimitTotal) {
+        return res.status(400).json({
+          success: false,
+          message: "Coupon usage limit reached"
         });
       }
 
-      // 💰 Apply discount
+      // CHECK PER USER LIMIT
+      const userUsage = coupon.usedBy.find(
+        (u: any) => u.user.toString() === userId.toString()
+      );
+
+      if (userUsage && coupon.usageLimitPerUser && userUsage.count >= coupon.usageLimitPerUser) {
+        return res.status(400).json({
+          success: false,
+          message: "You already used this coupon"
+        });
+      }
+
+      // CALCULATE DISCOUNT ONLY AFTER LIMITS PASS
+      let discount = coupon.type === 'percent'
+        ? totalAmount * (coupon.value / 100)
+        : coupon.value;
+
+      if (coupon.minOrderAmount && totalAmount < coupon.minOrderAmount) {
+        return res.status(400).json({
+          success: false,
+          message: `Minimum order amount $${coupon.minOrderAmount} required`
+        });
+      }
+
       finalTotal = Math.max(0, totalAmount - discount);
-      
+
       couponData = {
         code: coupon.code,
-        discountAmount: discount // 👈 Calculated by server, not user!
+        discountAmount: discount
       };
+
+      // UPDATE COUPON USAGE
+      coupon.usedCount += 1;
+
+      if (userUsage) {
+        userUsage.count += 1;
+      } else {
+        coupon.usedBy.push({ user: userId, count: 1 });
+      }
+
+      await coupon.save();
     }
-    // If coupon not found, just ignore (or return error)
   }
 
     // Create order
@@ -165,7 +185,7 @@ export const createOrder = async (req: Request, res: Response) => {
       shippingAddress,
       phone,
       appliedCoupon: couponData,
-      status: 'pending' // or 'paid' if you have payment later
+      status: 'pending'
     });
 
     await order.save();
@@ -174,8 +194,8 @@ export const createOrder = async (req: Request, res: Response) => {
     for (const item of orderItems) {
       await Product.findByIdAndUpdate(item.product, {
         $inc: { 
-          stock: -item.quantity,     // Decrease stock
-          soldCount: item.quantity   // 👈 Increase soldCount
+          stock: -item.quantity, 
+          soldCount: item.quantity 
         }
       });
     }
@@ -195,14 +215,12 @@ export const createOrder = async (req: Request, res: Response) => {
 };
 
 
-// PUT /api/orders/:id — Allow user to cancel order (optional)
+// PUT /api/orders/:id — Allow user to cancel order
 export const updateOrder = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
     const userId = (req as any).user._id;
-
-    // Only allow user to cancel (not other status changes)
     if (status !== 'canceled') {
       return res.status(400).json({ success: false, message: 'Only cancellation is allowed' });
     }
@@ -212,7 +230,6 @@ export const updateOrder = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    // Only allow canceling if status is still pending/paid
     if (!['pending', 'paid'].includes(order.status)) {
       return res.status(400).json({ success: false, message: 'Cannot cancel this order' });
     }

@@ -8,7 +8,7 @@ export const getAdminCategories = async (req: Request, res: Response) => {
     res.json(categories);
 };
 
-// PUT update — optional new image
+// PUT update
 export const updateAdminCategory = async (req: Request, res: Response) => {
   try {
       const category = await Category.findById(req.params.id);
@@ -17,9 +17,7 @@ export const updateAdminCategory = async (req: Request, res: Response) => {
       const { name } = req.body;
       let imageUrl = category.image;
 
-        // If new image, upload and replace old
     if (req.file && req.file.buffer) {
-      // Delete old image from Cloudinary (optional, pro touch)
       if (category.image) {
         const publicId = category.image.split('/').pop()?.split('.')[0];
         if (publicId) {
@@ -41,7 +39,7 @@ export const updateAdminCategory = async (req: Request, res: Response) => {
           }
         }
       );
-      stream.end((req.file as Express.Multer.File).buffer); // ✅ Safe now — we checked req.file.buffer exists
+      stream.end((req.file as Express.Multer.File).buffer);
     });
 
     imageUrl = result;
@@ -71,7 +69,6 @@ export const createAdminCategory = async (req: Request, res: Response) => {
 
     let imageUrl = '';
 
-    // If image uploaded, upload to Cloudinary
     if (req.file) {
       const result: any = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
@@ -84,7 +81,7 @@ export const createAdminCategory = async (req: Request, res: Response) => {
             resolve(result);
           }
         );
-        stream.end((req.file as Express.Multer.File).buffer); // 👈 Type assertion here
+        stream.end((req.file as Express.Multer.File).buffer);
       });
 
       imageUrl = result.secure_url;
@@ -115,10 +112,6 @@ export const deleteAdminCategory = async (req: Request, res: Response) => {
     if (!category) {
       return res.status(404).json({ message: 'Category not found' });
     }
-
-    // Optional: check if any product uses this category first
-    // const used = await Product.findOne({ category: category._id });
-    // if (used) return res.status(400).json({ message: 'Category has products' });
 
     await category.deleteOne();
     res.json({ message: 'Category removed' });

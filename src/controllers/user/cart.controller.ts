@@ -5,7 +5,7 @@ import Product from "../../models/product.model.js";
 // GET /api/cart — Get user's cart
 export const getCart = async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user._id; // Your auth middleware attaches user
+    const userId = (req as any).user._id; 
 
     const cart = await Cart.findOne({ user: userId }).populate('items.product', 'name slug images');
 
@@ -20,8 +20,8 @@ export const getCart = async (req: Request, res: Response) => {
     // Calculate totals
     const totalItems = cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
     const totalPrice = cart.items.reduce((sum, item) => {
-      const price = item.price || 0; // Default to 0 if null/undefined
-      const quantity = item.quantity || 1; // Default to 1 if null/undefined
+      const price = item.price || 0;
+      const quantity = item.quantity || 1;
       return sum + (price * quantity);
     }, 0);
 
@@ -47,24 +47,20 @@ export const addToCart = async (req: Request, res: Response) => {
     const { productId, quantity = 1 } = req.body;
     const userId = (req as any).user._id;
 
-    // Validate input
     if (!productId || typeof quantity !== 'number' || quantity < 1) {
       return res.status(400).json({ success: false, message: 'Invalid product ID or quantity' });
     }
 
-    // Find product
     const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Find or create cart
     let cart = await Cart.findOne({ user: userId });
     if (!cart) {
       cart = new Cart({ user: userId, items: [] });
     }
 
-    // Check if product already in cart
     const existingItem = cart.items.find(item => 
       item.product.toString() === productId
     );
@@ -138,25 +134,21 @@ export const removeCartItem = async (req: Request, res: Response) => {
     const { itemId } = req.params;
     const userId = (req as any).user._id;
 
-    // Find cart
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
       return res.status(404).json({ success: false, message: 'Cart not found' });
     }
 
-    // Check if item exists
     const itemExists = cart.items.some(item => item._id.toString() === itemId);
     if (!itemExists) {
       return res.status(404).json({ success: false, message: 'Cart item not found' });
     }
 
-    // ✅ CORRECT: Use Mongoose $pull operator
     await Cart.updateOne(
       { user: userId, 'items._id': itemId },
       { $pull: { items: { _id: itemId } } }
     );
 
-    // Re-fetch cart to return updated version
     const updatedCart = await Cart.findOne({ user: userId }).populate('items.product', 'name slug images');
 
     return res.status(200).json({

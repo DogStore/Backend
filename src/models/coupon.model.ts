@@ -10,6 +10,12 @@ const couponSchema = new mongoose.Schema({
   usageLimitTotal: Number,
   usageLimitPerUser: { type: Number, default: 1 },
   usedCount: { type: Number, default: 0 },
+  usedBy: [
+    {
+      user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      count: { type: Number, default: 0 }
+    }
+  ],
   validUntil: Date,
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });

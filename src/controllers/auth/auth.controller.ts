@@ -3,7 +3,6 @@ import User from '../../models/user.model.js';
 import generateToken from '../../utils/generateToken.js';
 import jwt from 'jsonwebtoken'
 
-// Custom interface for req.user (after protect middleware)
 interface AuthRequest extends Request {
   user?: any;
 }
@@ -26,10 +25,8 @@ export const registerUser = async (req: Request, res: Response) => {
       role: email === 'admin@doghub.com' ? 'admin' : 'user'
     });
 
-    // Save first to get real _id
     await user.save();
 
-    // Now generate token with real ID
     const token = generateToken(user._id.toString());
 
     user.Token = token; 
@@ -86,13 +83,11 @@ export const logoutUser = async (req: AuthRequest, res: Response) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (token && req.user) {
-    // ✅ Clear all Token (since only one exists, this removes it)
     req.user.tokens = null;;
     await req.user.save();
   }
 
   res.json({ message: 'Logged out successfully' });
-  // Frontend should also remove token from localStorage
 };
 
 // GET CURRENT USER (/me)
@@ -107,7 +102,7 @@ export const getMe = async (req: AuthRequest, res: Response) => {
   });
 };
 
-// REFRESH TOKEN (simple version — just regenerate)
+// REFRESH TOKEN
 export const refreshToken = async (req: Request, res: Response) => {
   const { token } = req.body;
 
@@ -116,15 +111,14 @@ export const refreshToken = async (req: Request, res: Response) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
     
-    // Optional: verify old token is still valid in DB
+
     const user = await User.findById(decoded.id);
     if (!user || user.Token !== token) {
       return res.status(401).json({ message: 'Old token revoked' });
     }
 
     const newToken = generateToken(decoded.id);
-    
-    // ✅ Save new token to DB (optional but recommended)
+
     user.Token = newToken;
     await user.save();
 
